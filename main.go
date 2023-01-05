@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/piotrselak/back/internal/handlers"
 	"github.com/piotrselak/back/pkg/db"
 )
 
@@ -33,10 +35,17 @@ func main() {
 	}))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hi"))
+		w.Write([]byte("api"))
 	})
 
-	r.Mount("/quiz", quizRouter())
+	r.Mount("/quiz", quizRouter(driver))
 
 	http.ListenAndServe(":3333", r)
+}
+
+func quizRouter(driver neo4j.DriverWithContext) http.Handler {
+	r := chi.NewRouter()
+	r.Use(db.OpenSession(driver))
+	r.Get("/", handlers.FetchAllQuizes)
+	return r
 }

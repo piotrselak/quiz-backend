@@ -1,6 +1,8 @@
 package db
 
 import (
+	"net/http"
+
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -12,4 +14,10 @@ func InitNeo4j() neo4j.DriverWithContext {
 		panic(err)
 	}
 	return driver
+}
+
+func GetSessionFromContext(r *http.Request) neo4j.SessionWithContext {
+	var session neo4j.SessionWithContext
+	session = r.Context().Value("session").(neo4j.SessionWithContext)
+	return session
 }

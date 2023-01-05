@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  neo4j:
+    image: neo4j:latest
+    restart: unless-stopped
+    ports:
+      - 7474:7474
+      - 7687:7687
+    volumes:
+      - ./ops/conf:/conf
+      - ./ops/data:/data
+      - ./ops/import:/import
+      - ./ops/logs:/logs
+      - ./ops/plugins:/plugins
+    environment:
+      - NEO4J_AUTH=none
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms.memory.heap.initial_size=1G
+      - NEO4J_dbms_memory_heap_max__size=1G
