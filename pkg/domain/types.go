@@ -1,3 +1,3 @@
-package db
+package domain
 
 type Cypher = string

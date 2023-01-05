@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/piotrselak/back/handlers"
+	"github.com/piotrselak/back/internal/handlers"
 )
 
 func quizRouter() http.Handler {

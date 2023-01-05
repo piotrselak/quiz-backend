@@ -3,8 +3,6 @@ package domain
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/piotrselak/back/modules/db"
 )
 
 // Quiz Neo4j Node
@@ -15,7 +13,7 @@ type Quiz struct {
 	EditHash string  `json:"editHash"`
 }
 
-func (quiz Quiz) ToCypher(char string) db.Cypher {
+func (quiz Quiz) ToCypher(char string) Cypher {
 	q, _ := json.Marshal(quiz)
 	properties := string(q)
 	return fmt.Sprintf("(%s:Quiz %s)", char, properties)
@@ -24,10 +22,10 @@ func (quiz Quiz) ToCypher(char string) db.Cypher {
 // Has Neo4j Relationship
 type Has struct{}
 
-func (r *Has) ToCypherRight(char string) db.Cypher {
+func (r *Has) ToCypherRight(char string) Cypher {
 	return fmt.Sprintf("-[%s:Has]->")
 }
 
-func (r *Has) ToCypherLeft(char string) db.Cypher {
+func (r *Has) ToCypherLeft(char string) Cypher {
 	return fmt.Sprintf("<-[%s:Has]-")
 }
