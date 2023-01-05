@@ -1,18 +1,23 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/piotrselak/back/modules/db"
 )
 
 func main() {
+	driver := db.InitNeo4j()
+	ctx := context.Background()
+	defer driver.Close(ctx)
+
 	r := chi.NewRouter()
 
-	// A good base middleware stack
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
@@ -26,6 +31,7 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hi"))
 	})
