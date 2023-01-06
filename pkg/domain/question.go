@@ -23,5 +23,6 @@ type Answer struct {
 func (answer Answer) ToCypher(char string) Cypher {
 	q, _ := json.Marshal(answer)
 	properties := string(q)
+	// maybe remove "" in properties
 	return fmt.Sprintf("(%s:Answer %s)", char, properties)
 }
