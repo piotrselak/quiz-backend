@@ -11,8 +11,11 @@ type Question struct {
 }
 
 func (question Question) ToCypher(char string) Cypher {
-	q, _ := json.Marshal(question)
-	properties := string(q)
+	//q, _ := json.Marshal(question)
+	//properties := string(q)
+	//return fmt.Sprintf("(%s:Question %s)", char, properties)
+	properties := fmt.Sprintf("{questionText: '%s', answers: '%s'}",
+		question.QuestionText, question.Answers)
 	return fmt.Sprintf("(%s:Question %s)", char, properties)
 }
 
