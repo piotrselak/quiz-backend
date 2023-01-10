@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/piotrselak/back/pkg/domain"
+	domain2 "github.com/piotrselak/back/domain"
 )
 
-func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*domain.Quiz, error) {
-	result, err := neo4j.ExecuteRead[[]*domain.Quiz](ctx, session,
-		func(transaction neo4j.ManagedTransaction) ([]*domain.Quiz, error) {
+func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*domain2.Quiz, error) {
+	result, err := neo4j.ExecuteRead[[]*domain2.Quiz](ctx, session,
+		func(transaction neo4j.ManagedTransaction) ([]*domain2.Quiz, error) {
 			neoRecords, err := transaction.Run(ctx,
 				"MATCH (quiz:Quiz) RETURN quiz",
 				map[string]any{})
@@ -24,7 +24,7 @@ func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*dom
 				return nil, err
 			}
 
-			var resultRecords []*domain.Quiz
+			var resultRecords []*domain2.Quiz
 
 			for _, record := range records {
 				quiz, err := toQuiz(record)
@@ -44,9 +44,9 @@ func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*dom
 }
 
 func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
-	quizWithQuestions domain.QuizWithQuestions) error {
-	_, err := neo4j.ExecuteWrite[*domain.QuizWithQuestions](ctx, session,
-		func(transaction neo4j.ManagedTransaction) (*domain.QuizWithQuestions, error) {
+	quizWithQuestions domain2.QuizWithQuestions) error {
+	_, err := neo4j.ExecuteWrite[*domain2.QuizWithQuestions](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*domain2.QuizWithQuestions, error) {
 			questions := quizWithQuestions.Questions
 			var cypherScript = ""
 

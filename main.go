@@ -9,12 +9,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/piotrselak/back/internal/handlers"
-	"github.com/piotrselak/back/pkg/db"
+	db2 "github.com/piotrselak/back/db"
+	http2 "github.com/piotrselak/back/http"
 )
 
 func main() {
-	driver := db.InitNeo4j()
+	driver := db2.InitNeo4j()
 	ctx := context.Background()
 	defer driver.Close(ctx)
 
@@ -45,7 +45,7 @@ func main() {
 
 func quizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
-	r.Use(db.OpenSession(driver))
-	r.Get("/", handlers.FetchAllQuizes)
+	r.Use(OpenSession(driver))
+	r.Get("/", http2.FetchAllQuizes)
 	return r
 }

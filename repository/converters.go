@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/piotrselak/back/pkg/domain"
+	"github.com/piotrselak/back/domain"
 )
 
 // ToQuiz - converts neo4j record to quiz

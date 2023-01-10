@@ -1,13 +1,13 @@
-package handlers
+package http
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/piotrselak/back/internal/repository"
-	"github.com/piotrselak/back/pkg/db"
-	"github.com/piotrselak/back/pkg/domain"
+	"github.com/piotrselak/back/db"
+	domain2 "github.com/piotrselak/back/domain"
+	"github.com/piotrselak/back/repository"
 )
 
 func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +15,7 @@ func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	quizes, err := repository.GetAllQuizes(ctx, session)
 	if err == fmt.Errorf("could not find column") {
-		json, _ := json.Marshal([]domain.Quiz{})
+		json, _ := json.Marshal([]domain2.Quiz{})
 		w.Write(json)
 		return
 	}
@@ -35,7 +35,7 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
 
-	var q domain.QuizWithQuestions
+	var q domain2.QuizWithQuestions
 	err := json.NewDecoder(r.Body).Decode(&q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
