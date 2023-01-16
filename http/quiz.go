@@ -3,10 +3,10 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/piotrselak/back/domain"
 	"net/http"
 
 	"github.com/piotrselak/back/db"
-	domain2 "github.com/piotrselak/back/domain"
 	"github.com/piotrselak/back/repository"
 )
 
@@ -15,8 +15,8 @@ func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	quizes, err := repository.GetAllQuizes(ctx, session)
 	if err == fmt.Errorf("could not find column") {
-		json, _ := json.Marshal([]domain2.Quiz{})
-		w.Write(json)
+		jsonErr, _ := json.Marshal([]domain.Quiz{})
+		w.Write(jsonErr)
 		return
 	}
 	if err != nil {
@@ -25,7 +25,7 @@ func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := json.Marshal(quizes)
 	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, "Request failed due to error during parsing json", 500)
 		return
 	}
 	w.Write(result)
@@ -35,13 +35,13 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
 
-	var q domain2.QuizWithQuestions
+	var q domain.QuizForPost
 	err := json.NewDecoder(r.Body).Decode(&q)
+	fmt.Println(r.Body, q, err)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//fmt.Println(r.Body, q)
 	err = repository.CreateQuiz(ctx, session, q)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)

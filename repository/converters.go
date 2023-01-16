@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/piotrselak/back/domain"
@@ -25,7 +26,7 @@ func toQuiz(record *neo4j.Record) (*domain.Quiz, error) {
 		return nil, err
 	}
 
-	rating, err := neo4j.GetProperty[float64](itemNode, "rating")
+	rating, err := neo4j.GetProperty[string](itemNode, "rating")
 	if err != nil {
 		return nil, err
 	}
@@ -35,5 +36,9 @@ func toQuiz(record *neo4j.Record) (*domain.Quiz, error) {
 		return nil, err
 	}
 
-	return &domain.Quiz{Id: id, Name: name, Rating: rating, EditHash: editHash}, nil
+	ratingFloat, err := strconv.ParseFloat(rating, 64);
+	if err != nil {
+		return nil, err
+	}
+	return &domain.Quiz{Id: id, Name: name, Rating: ratingFloat, EditHash: editHash}, nil
 }

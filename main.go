@@ -9,12 +9,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	db2 "github.com/piotrselak/back/db"
+	db "github.com/piotrselak/back/db"
 	http2 "github.com/piotrselak/back/http"
 )
 
 func main() {
-	driver := db2.InitNeo4j()
+	driver := db.InitNeo4j()
 	ctx := context.Background()
 	defer driver.Close(ctx)
 
@@ -35,17 +35,38 @@ func main() {
 	}))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("api"))
+		_, _ = w.Write([]byte("api"))
 	})
 
 	r.Mount("/quiz", quizRouter(driver))
 
-	http.ListenAndServe(":3333", r)
+	err := http.ListenAndServe(":3333", r)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func quizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
-	r.Use(OpenSession(driver))
+	r.Use(openSession(driver))
 	r.Get("/", http2.FetchAllQuizes)
+	r.Post("/", http2.CreateNewQuiz)
 	return r
+}
+
+func openSession(driver neo4j.DriverWithContext) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			session := driver.NewSession(r.Context(), neo4j.SessionConfig{})
+			defer func() {
+				err := session.Close(r.Context())
+				if err != nil {
+					return
+				}
+			}()
+
+			ctx := context.WithValue(r.Context(), "session", session)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
