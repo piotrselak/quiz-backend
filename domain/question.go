@@ -1,31 +1,24 @@
 package domain
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
+// !!! question for fetch shouldnt have valid answers in it
+
 type Question struct {
-	QuestionText string        `json:"questionText"`
-	Answers      []interface{} `json:"answers"`
+	Index        int64      `json:"index"`
+	QuestionText string     `json:"questionText"`
+	Answers      [][]string `json:"answers"`
+	Type         string     `json:"type"`
 }
 
 func (question Question) ToCypher(char string) Cypher {
-	//q, _ := json.Marshal(question)
-	//properties := string(q)
-	//return fmt.Sprintf("(%s:Question %s)", char, properties)
-	properties := fmt.Sprintf("{questionText: '%s', answers: '%s'}",
-		question.QuestionText, question.Answers)
+	properties := fmt.Sprintf("{index: '%d', questionText: '%s', answers: '%s', type: '%s'}",
+		question.Index, question.QuestionText, question.Answers, question.Type)
 	return fmt.Sprintf("(%s:Question %s)", char, properties)
 }
 
-type Answer struct {
-	Answer []interface{} `json:"answer"`
-}
-
-func (answer Answer) ToCypher(char string) Cypher {
-	q, _ := json.Marshal(answer)
-	properties := string(q)
-	// maybe remove "" in properties
-	return fmt.Sprintf("(%s:Answer %s)", char, properties)
+type QuestionForPost struct {
+	Data []Question `json:"data"`
 }

@@ -1,4 +1,4 @@
-package http
+package web
 
 import (
 	"encoding/json"
@@ -37,7 +37,7 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 
 	var q domain.QuizForPost
 	err := json.NewDecoder(r.Body).Decode(&q)
-	fmt.Println(r.Body, q, err)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -50,3 +50,58 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func AddQuestions(w http.ResponseWriter, r *http.Request) {
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
+
+	var q domain.QuestionForPost
+	err := json.NewDecoder(r.Body).Decode(&q)
+
+	fmt.Println(r.Body, q, err)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = repository.AddQuestions(ctx, session, id, q)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func ModifyQuiz() {
+
+}
+
+func RemoveQuiz() {
+
+}
+
+func LikeQuiz() {}
+
+// saves record as well
+func VerifyAnswers() {
+
+}
+
+func FilterByLikes() {
+
+}
+
+func FilterByMostPlays() {
+
+}
+
+func FetchNumberOfQuizes() {
+
+}
+
+func FetchScoreStatisticsForQuiz() {
+
+}
+
+//maybe some apoc

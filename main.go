@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	db "github.com/piotrselak/back/db"
-	http2 "github.com/piotrselak/back/http"
+	web "github.com/piotrselak/back/web"
 )
 
 func main() {
@@ -39,6 +39,7 @@ func main() {
 	})
 
 	r.Mount("/quiz", quizRouter(driver))
+	r.Mount("/quiz/{id}", specificQuizRouter(driver))
 
 	err := http.ListenAndServe(":3333", r)
 	if err != nil {
@@ -49,9 +50,26 @@ func main() {
 func quizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
 	r.Use(openSession(driver))
-	r.Get("/", http2.FetchAllQuizes)
-	r.Post("/", http2.CreateNewQuiz)
+	r.Get("/", web.FetchAllQuizes)
+	r.Post("/", web.CreateNewQuiz)
 	return r
+}
+
+func specificQuizRouter(driver neo4j.DriverWithContext) http.Handler {
+	r := chi.NewRouter()
+	r.Use(openSession(driver))
+	r.Use(QuizIDCtx)
+	r.Post("/", web.AddQuestions)
+	r.Get("/", web.FetchAllQuizes)
+	return r
+}
+
+func QuizIDCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		quizID := chi.URLParam(r, "id")
+		ctx := context.WithValue(r.Context(), "quizID", quizID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func openSession(driver neo4j.DriverWithContext) func(http.Handler) http.Handler {

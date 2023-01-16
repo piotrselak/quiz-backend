@@ -50,7 +50,7 @@ func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
 		func(transaction neo4j.ManagedTransaction) (*domain.QuizForPost, error) {
 
 			_, err := transaction.Run(ctx,
-				fmt.Sprintf("CREATE %s", quiz.ToQuiz(uuid.New().String(), 0).ToCypher("q")),
+				fmt.Sprintf("CREATE %s", quiz.ToQuiz(uuid.New().String(), 0, 0).ToCypher("q")),
 				map[string]any{})
 
 			if err != nil {
@@ -58,6 +58,43 @@ func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
 			}
 
 			return &quiz, nil
+		})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
+	id string, questions domain.QuestionForPost) error {
+	_, err := neo4j.ExecuteWrite[*domain.QuestionForPost](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*domain.QuestionForPost, error) {
+
+			var cypherQuestions = ""
+
+			for index, question := range questions.Data {
+				newQuestion := fmt.Sprintf("(q)%s%s",
+					domain.Has{}.ToCypherRight(""), question.ToCypher(""))
+				var split string
+				if index == len(questions.Data)-1 {
+					split = ""
+				} else {
+					split = ", "
+				}
+				cypherQuestions = cypherQuestions + newQuestion + split
+			}
+
+			_, err := transaction.Run(ctx,
+				fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) CREATE %s", id, cypherQuestions),
+				map[string]any{})
+			fmt.Println(cypherQuestions)
+			fmt.Println(err)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return &questions, nil
 		})
 	if err != nil {
 		return err
