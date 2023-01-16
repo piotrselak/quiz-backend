@@ -10,12 +10,14 @@ import (
 	"github.com/piotrselak/back/repository"
 )
 
+// FetchAllQuizes All errors are 500 - everything should work even when database is empty
 func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
 	quizes, err := repository.GetAllQuizes(ctx, session)
 	if err == fmt.Errorf("could not find column") {
 		jsonErr, _ := json.Marshal([]domain.Quiz{})
+		w.WriteHeader(500)
 		w.Write(jsonErr)
 		return
 	}
@@ -31,6 +33,7 @@ func FetchAllQuizes(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
+// CreateNewQuiz Error 500 happens only if something is parsed badly by neo4j - server error
 func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
@@ -48,7 +51,7 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func AddQuestions(w http.ResponseWriter, r *http.Request) {
@@ -59,25 +62,39 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	var q domain.QuestionForPost
 	err := json.NewDecoder(r.Body).Decode(&q)
 
-	fmt.Println(r.Body, q, err)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	err = repository.AddQuestions(ctx, session, id, q)
 	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
+}
+
+// Add checking hash!
+func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
+
+	err := repository.RemoveQuiz(ctx, session, id)
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func FetchSpecificQuiz() {
+
 }
 
 func ModifyQuiz() {
-
-}
-
-func RemoveQuiz() {
 
 }
 

@@ -60,7 +60,8 @@ func specificQuizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r.Use(openSession(driver))
 	r.Use(QuizIDCtx)
 	r.Post("/", web.AddQuestions)
-	r.Get("/", web.FetchAllQuizes)
+	r.Delete("/", web.RemoveQuiz)
+	//r.Get("/", web.FetchAllQuizes)
 	return r
 }
 

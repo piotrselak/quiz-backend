@@ -6,12 +6,11 @@ import (
 
 // Quiz Neo4j Node
 type Quiz struct {
-	Id        string  `json:"id"`
-	Name      string  `json:"name"`
-	Rating    float64 `json:"rating"`
-	EditHash  string  `json:"editHash"`
-	Modifiers string  `json:"modifiers"`
-	Plays     int64   `json:"plays"`
+	Id        string   `json:"id"`
+	Name      string   `json:"name"`
+	Rating    float64  `json:"rating"`
+	EditHash  string   `json:"editHash"`
+	Modifiers []string `json:"modifiers"`
 }
 
 func (quiz Quiz) ToCypher(char string) Cypher {
@@ -21,13 +20,14 @@ func (quiz Quiz) ToCypher(char string) Cypher {
 }
 
 type QuizForPost struct {
-	Name      string `json:"name"`
-	EditHash  string `json:"editHash"`
-	Modifiers string `json:"modifiers"`
+	Name      string   `json:"name"`
+	EditHash  string   `json:"editHash"`
+	Modifiers []string `json:"modifiers"`
 }
 
-func (quiz QuizForPost) ToQuiz(id string, rating float64, plays int64) Quiz {
-	return Quiz{Id: id, Name: quiz.Name, Rating: rating, EditHash: quiz.EditHash, Modifiers: quiz.Modifiers, Plays: plays}
+func (quiz QuizForPost) ToQuiz(id string, rating float64) Quiz {
+	return Quiz{Id: id, Name: quiz.Name, Rating: rating,
+		EditHash: quiz.EditHash, Modifiers: quiz.Modifiers}
 }
 
 // Has Neo4j Relationship

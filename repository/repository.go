@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"reflect"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/piotrselak/back/domain"
@@ -50,7 +52,7 @@ func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
 		func(transaction neo4j.ManagedTransaction) (*domain.QuizForPost, error) {
 
 			_, err := transaction.Run(ctx,
-				fmt.Sprintf("CREATE %s", quiz.ToQuiz(uuid.New().String(), 0, 0).ToCypher("q")),
+				fmt.Sprintf("CREATE %s", quiz.ToQuiz(uuid.New().String(), 0).ToCypher("q")),
 				map[string]any{})
 
 			if err != nil {
@@ -67,6 +69,11 @@ func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
 
 func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 	id string, questions domain.QuestionForPost) error {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return errors.New("not found")
+	}
+
 	_, err := neo4j.ExecuteWrite[*domain.QuestionForPost](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (*domain.QuestionForPost, error) {
 
@@ -87,8 +94,6 @@ func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 			_, err := transaction.Run(ctx,
 				fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) CREATE %s", id, cypherQuestions),
 				map[string]any{})
-			fmt.Println(cypherQuestions)
-			fmt.Println(err)
 
 			if err != nil {
 				return nil, err
@@ -100,4 +105,58 @@ func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 		return err
 	}
 	return nil
+}
+
+func RemoveQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) error {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return errors.New("not found")
+	}
+
+	cypherScript := fmt.Sprintf(
+		"MATCH (player:Player)-[played:Played]->(q:Quiz {id: '%s'})"+
+			"-[has:Has]->(question:Question) DELETE player, played, q, has, question", id)
+	_, _ = session.Run(ctx, cypherScript, map[string]any{})
+
+	cypherScript = fmt.Sprintf("MATCH (q2:Quiz {id: '%s'})-[has2:Has]->"+
+		"(question2:Question) DELETE q2, has2, question2", id)
+	_, _ = session.Run(ctx, cypherScript, map[string]any{})
+
+	return nil
+}
+
+func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {
+	result, err := neo4j.ExecuteRead[domain.Quiz](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (domain.Quiz, error) {
+			neoRecords, err := transaction.Run(ctx,
+				fmt.Sprintf("MATCH (quiz:Quiz {id: '%s'}) RETURN quiz", id),
+				map[string]any{})
+
+			if err != nil {
+				return domain.Quiz{}, err
+			}
+
+			records, err := neoRecords.Collect(ctx)
+			if err != nil {
+				return domain.Quiz{}, err
+			}
+
+			var resultRecord domain.Quiz
+
+			for _, record := range records {
+				quiz, err := toQuiz(record)
+				if err != nil {
+					return domain.Quiz{}, err
+				}
+
+				resultRecord = *quiz
+			}
+
+			return resultRecord, nil
+		})
+
+	if err != nil || reflect.DeepEqual(domain.Quiz{}, result) {
+		return false
+	}
+	return true
 }
