@@ -125,6 +125,56 @@ func RemoveQuiz(ctx context.Context, session neo4j.SessionWithContext, id string
 	return nil
 }
 
+func FetchSpecificQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) (domain.QuizWithQuestions, error) {
+	result, err := neo4j.ExecuteRead[*domain.QuizWithQuestions](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*domain.QuizWithQuestions, error) {
+			cypherScript := fmt.Sprintf("MATCH (quiz:Quiz {id: '%s'})"+
+				"-[:Has]->(question: Question) RETURN quiz, question", id)
+			neoRecords, err := transaction.Run(ctx,
+				cypherScript,
+				map[string]any{})
+
+			if err != nil {
+				return nil, err
+			}
+
+			records, err := neoRecords.Collect(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			quiz, err := toQuiz(records[0])
+			if err != nil {
+				return nil, err
+			}
+
+			var resultRecords []domain.QuestionForFetch
+
+			for _, record := range records {
+
+				questionForFetch, err := toQuestionForFetch(record)
+				if err != nil {
+					return nil, err
+				}
+
+				resultRecords = append(resultRecords, *questionForFetch)
+			}
+
+			return &domain.QuizWithQuestions{
+				Quiz:      *quiz,
+				Questions: resultRecords,
+			}, nil
+		})
+	if err != nil {
+		return domain.QuizWithQuestions{}, err
+	}
+	return *result, nil
+}
+
+func FetchRecordsForQuiz() {
+
+}
+
 func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {
 	result, err := neo4j.ExecuteRead[domain.Quiz](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (domain.Quiz, error) {

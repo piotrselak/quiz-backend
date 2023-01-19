@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-// !!! question for fetch shouldnt have valid answers in it
-
 type Question struct {
 	Index        int64      `json:"index"`
 	QuestionText string     `json:"questionText"`
@@ -21,4 +19,12 @@ func (question Question) ToCypher(char string) Cypher {
 
 type QuestionForPost struct {
 	Data []Question `json:"data"`
+}
+
+// QuestionForFetch is used for fetching questions when frontend should not get valid answers to question
+type QuestionForFetch struct {
+	Index        int64    `json:"index"`
+	QuestionText string   `json:"questionText"`
+	Answers      []string `json:"answers"`
+	Type         string   `json:"type"`
 }

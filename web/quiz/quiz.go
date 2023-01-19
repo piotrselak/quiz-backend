@@ -1,13 +1,12 @@
-package web
+package quiz
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/piotrselak/back/domain"
-	"net/http"
-
 	"github.com/piotrselak/back/db"
+	"github.com/piotrselak/back/domain"
 	"github.com/piotrselak/back/repository"
+	"net/http"
 )
 
 // FetchAllQuizes All errors are 500 - everything should work even when database is empty
@@ -54,57 +53,6 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func AddQuestions(w http.ResponseWriter, r *http.Request) {
-	session := db.GetSessionFromContext(r)
-	ctx := r.Context()
-	id := ctx.Value("quizID").(string)
-
-	var q domain.QuestionForPost
-	err := json.NewDecoder(r.Body).Decode(&q)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	err = repository.AddQuestions(ctx, session, id, q)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-}
-
-// Add checking hash!
-func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
-	session := db.GetSessionFromContext(r)
-	ctx := r.Context()
-	id := ctx.Value("quizID").(string)
-
-	err := repository.RemoveQuiz(ctx, session, id)
-	if err != nil {
-		http.Error(w, http.StatusText(404), 404)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func FetchSpecificQuiz() {
-
-}
-
-func ModifyQuiz() {
-
-}
-
-func LikeQuiz() {}
-
-// saves record as well
-func VerifyAnswers() {
-
-}
-
 func FilterByLikes() {
 
 }
@@ -116,9 +64,3 @@ func FilterByMostPlays() {
 func FetchNumberOfQuizes() {
 
 }
-
-func FetchScoreStatisticsForQuiz() {
-
-}
-
-//maybe some apoc
