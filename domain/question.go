@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -12,8 +13,9 @@ type Question struct {
 }
 
 func (question Question) ToCypher(char string) Cypher {
-	properties := fmt.Sprintf("{index: '%d', questionText: '%s', answers: '%s', type: '%s'}",
-		question.Index, question.QuestionText, question.Answers, question.Type)
+	answers, _ := json.Marshal(question.Answers)
+	properties := fmt.Sprintf("{index: %d, questionText: '%s', answers: %s, type: '%s'}",
+		question.Index, question.QuestionText, string(answers), question.Type)
 	return fmt.Sprintf("(%s:Question %s)", char, properties)
 }
 

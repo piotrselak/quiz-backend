@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -23,8 +24,9 @@ type QuizForPost struct {
 type Has struct{}
 
 func (quiz Quiz) ToCypher(char string) Cypher {
+	mods, _ := json.Marshal(quiz.Modifiers)
 	properties := fmt.Sprintf("{id: '%s', name: '%s', rating: %.1f, editHash: '%s', modifiers: %s}",
-		quiz.Id, quiz.Name, quiz.Rating, quiz.EditHash, quiz.Modifiers)
+		quiz.Id, quiz.Name, quiz.Rating, quiz.EditHash, string(mods))
 	return fmt.Sprintf("(%s:Quiz %s)", char, properties)
 }
 
