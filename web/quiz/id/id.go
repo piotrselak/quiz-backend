@@ -38,7 +38,7 @@ func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := ctx.Value("quizID").(string)
 
-	var hash string
+	var hash domain.Hash
 	err := json.NewDecoder(r.Body).Decode(&hash)
 
 	if err != nil {

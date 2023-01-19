@@ -20,6 +20,11 @@ type QuizForPost struct {
 	Modifiers []string `json:"modifiers"`
 }
 
+// Hash - exists for delete body
+type Hash struct {
+	EditHash string `json:"editHash"`
+}
+
 // Has Neo4j Relationship
 type Has struct{}
 

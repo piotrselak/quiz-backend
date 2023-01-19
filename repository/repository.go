@@ -175,6 +175,7 @@ func FetchRecordsForQuiz() {
 
 }
 
+// check if it works
 func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {
 	result, err := neo4j.ExecuteRead[domain.Quiz](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (domain.Quiz, error) {
