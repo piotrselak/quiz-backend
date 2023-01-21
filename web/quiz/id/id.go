@@ -10,7 +10,6 @@ import (
 	"github.com/piotrselak/back/repository"
 )
 
-// Add checking hash!
 func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
@@ -18,6 +17,21 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 
 	var q domain.QuestionForPost
 	err := json.NewDecoder(r.Body).Decode(&q)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	validHash, err := repository.FetchQuizHash(ctx, session, id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+	if q.EditHash != validHash {
+		http.Error(w, http.StatusText(401), http.StatusUnauthorized)
+		return
+	}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -32,7 +46,6 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// Add checking hash!
 func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
@@ -46,7 +59,16 @@ func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//add fetching quiz and check hash here
+	validHash, err := repository.FetchQuizHash(ctx, session, id)
+
+	if err != nil {
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+	if hash.EditHash != validHash {
+		http.Error(w, http.StatusText(401), http.StatusUnauthorized)
+		return
+	}
 
 	err = repository.RemoveQuiz(ctx, session, id)
 	if err != nil {
@@ -65,7 +87,7 @@ func FetchSpecificQuiz(w http.ResponseWriter, r *http.Request) {
 	q, err := repository.FetchSpecificQuiz(ctx, session, id)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, http.StatusText(404), 404)
+		http.Error(w, fmt.Sprint(err), 404)
 		return
 	}
 	marshalled, err := json.Marshal(q)

@@ -44,13 +44,14 @@ func CreateNewQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = repository.CreateQuiz(ctx, session, q)
+	id, err := repository.CreateQuiz(ctx, session, q)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(id))
 }
 
 func FilterByLikes() {

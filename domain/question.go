@@ -22,7 +22,8 @@ func (question Question) ToCypher(char string) Cypher {
 }
 
 type QuestionForPost struct {
-	Data []Question `json:"data"`
+	Data     []Question `json:"data"`
+	EditHash string     `json:"editHash"`
 }
 
 // QuestionForFetch is used for fetching questions when frontend should not get valid answers to question

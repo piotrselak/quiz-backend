@@ -9,7 +9,7 @@ import (
 type Quiz struct {
 	Id        string   `json:"id"`
 	Name      string   `json:"name"`
-	Rating    float64  `json:"rating"`
+	Rating    float64  `json:"rating"` // rating is like
 	EditHash  string   `json:"editHash"`
 	Modifiers []string `json:"modifiers"`
 }
@@ -30,6 +30,7 @@ type Has struct{}
 
 func (quiz Quiz) ToCypher(char string) Cypher {
 	mods, _ := json.Marshal(quiz.Modifiers)
+	fmt.Println(string(mods))
 	properties := fmt.Sprintf("{id: '%s', name: '%s', rating: %.1f, editHash: '%s', modifiers: %s}",
 		quiz.Id, quiz.Name, quiz.Rating, quiz.EditHash, string(mods))
 	return fmt.Sprintf("(%s:Quiz %s)", char, properties)
