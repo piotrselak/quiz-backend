@@ -6,6 +6,41 @@ import (
 	"github.com/piotrselak/back/domain"
 )
 
+func toQuizForFetch(record *neo4j.Record) (*domain.QuizForFetch, error) {
+	rawItemNode, found := record.Get("quiz")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	itemNode := rawItemNode.(neo4j.Node)
+
+	id, err := neo4j.GetProperty[string](itemNode, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := neo4j.GetProperty[string](itemNode, "name")
+	if err != nil {
+		return nil, err
+	}
+
+	rating, err := neo4j.GetProperty[float64](itemNode, "rating")
+	if err != nil {
+		return nil, err
+	}
+
+	modifiersRaw, err := neo4j.GetProperty[[]interface{}](itemNode, "modifiers")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	var modifiers []string
+	for _, modifier := range modifiersRaw {
+		modifiers = append(modifiers, modifier.(string))
+	}
+	return &domain.QuizForFetch{Id: id, Name: name, Rating: rating, Modifiers: modifiers}, nil
+}
+
 // ToQuiz - converts neo4j record to quiz
 func toQuiz(record *neo4j.Record) (*domain.Quiz, error) {
 	rawItemNode, found := record.Get("quiz")
@@ -34,10 +69,18 @@ func toQuiz(record *neo4j.Record) (*domain.Quiz, error) {
 		return nil, err
 	}
 
+	modifiersRaw, err := neo4j.GetProperty[[]interface{}](itemNode, "modifiers")
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
-	return &domain.Quiz{Id: id, Name: name, Rating: rating, EditHash: editHash}, nil
+
+	var modifiers []string
+	for _, modifier := range modifiersRaw {
+		modifiers = append(modifiers, modifier.(string))
+	}
+
+	return &domain.Quiz{Id: id, Name: name, Rating: rating, EditHash: editHash, Modifiers: modifiers}, nil
 }
 
 func toQuestionForFetch(record *neo4j.Record) (*domain.QuestionForFetch, error) {
@@ -49,7 +92,6 @@ func toQuestionForFetch(record *neo4j.Record) (*domain.QuestionForFetch, error) 
 
 	index, err := neo4j.GetProperty[int64](itemNode, "index")
 	if err != nil {
-		fmt.Println("Expected fuckup")
 		return nil, err
 	}
 
@@ -77,6 +119,57 @@ func toQuestionForFetch(record *neo4j.Record) (*domain.QuestionForFetch, error) 
 		Index:        index,
 		QuestionText: questionText,
 		Answers:      answersFinal,
+		Type:         qType,
+	}, nil
+}
+
+func toQuestion(record *neo4j.Record) (*domain.Question, error) {
+	rawItemNode, found := record.Get("question")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	itemNode := rawItemNode.(neo4j.Node)
+
+	index, err := neo4j.GetProperty[int64](itemNode, "index")
+	if err != nil {
+		return nil, err
+	}
+
+	questionText, err := neo4j.GetProperty[string](itemNode, "questionText")
+	if err != nil {
+		return nil, err
+	}
+
+	answers, err := neo4j.GetProperty[[]any](itemNode, "answers")
+	if err != nil {
+		return nil, err
+	}
+
+	var answersFinal []string
+	for _, ans := range answers {
+		answersFinal = append(answersFinal, ans.(string))
+	}
+
+	validAnswers, err := neo4j.GetProperty[[]any](itemNode, "validAnswers")
+	if err != nil {
+		return nil, err
+	}
+
+	var validAnswersFinal []string
+	for _, ans := range validAnswers {
+		answersFinal = append(validAnswersFinal, ans.(string))
+	}
+
+	qType, err := neo4j.GetProperty[string](itemNode, "type")
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.Question{
+		Index:        index,
+		QuestionText: questionText,
+		Answers:      answersFinal,
+		ValidAnswers: validAnswersFinal,
 		Type:         qType,
 	}, nil
 }

@@ -25,20 +25,21 @@ func main() {
 	}(driver, ctx)
 
 	r := chi.NewRouter()
+	corsConfig := cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*", "http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"X-PINGOTHER", "Accept", "Authorization", "Content-Type", "X-CSRF-Token", "editHash"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
-	}))
+	r.Use(cors.Handler(corsConfig))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("api"))
@@ -46,7 +47,6 @@ func main() {
 
 	r.Mount("/quiz", quizRouter(driver))
 	r.Mount("/quiz/{id}", specificQuizRouter(driver))
-
 	err := http.ListenAndServe(":3333", r)
 	if err != nil {
 		panic(err)
@@ -65,9 +65,10 @@ func specificQuizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
 	r.Use(openSession(driver))
 	r.Use(QuizIDCtx)
-	r.Post("/", quizId.AddQuestions)
+	r.Put("/", quizId.AddQuestions)
 	r.Delete("/", quizId.RemoveQuiz)
 	r.Get("/", quizId.FetchSpecificQuiz)
+	r.Get("/answers", quizId.FetchSpecificQuizWithAnswers)
 	return r
 }
 

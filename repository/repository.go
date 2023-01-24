@@ -11,9 +11,9 @@ import (
 	"github.com/piotrselak/back/domain"
 )
 
-func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*domain.Quiz, error) {
-	result, err := neo4j.ExecuteRead[[]*domain.Quiz](ctx, session,
-		func(transaction neo4j.ManagedTransaction) ([]*domain.Quiz, error) {
+func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*domain.QuizForFetch, error) {
+	result, err := neo4j.ExecuteRead[[]*domain.QuizForFetch](ctx, session,
+		func(transaction neo4j.ManagedTransaction) ([]*domain.QuizForFetch, error) {
 			neoRecords, err := transaction.Run(ctx,
 				"MATCH (quiz:Quiz) RETURN quiz",
 				map[string]any{})
@@ -27,10 +27,10 @@ func GetAllQuizes(ctx context.Context, session neo4j.SessionWithContext) ([]*dom
 				return nil, err
 			}
 
-			var resultRecords []*domain.Quiz
+			var resultRecords []*domain.QuizForFetch
 
 			for _, record := range records {
-				quiz, err := toQuiz(record)
+				quiz, err := toQuizForFetch(record)
 				if err != nil {
 					return nil, err
 				}
@@ -50,16 +50,16 @@ func CreateQuiz(ctx context.Context, session neo4j.SessionWithContext,
 	quiz domain.QuizForPost) (string, error) {
 	result, err := neo4j.ExecuteWrite[domain.Quiz](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (domain.Quiz, error) {
-
+			newQuiz := quiz.ToQuiz(uuid.New().String(), 0)
 			_, err := transaction.Run(ctx,
-				fmt.Sprintf("CREATE %s", quiz.ToQuiz(uuid.New().String(), 0).ToCypher("q")),
+				fmt.Sprintf("CREATE %s", newQuiz.ToCypher("q")),
 				map[string]any{})
 
 			if err != nil {
 				return domain.Quiz{}, err
 			}
 
-			return quiz.ToQuiz(uuid.New().String(), 0), nil
+			return newQuiz, nil
 		})
 	if err != nil {
 		return "", err
@@ -128,6 +128,61 @@ func RemoveQuiz(ctx context.Context, session neo4j.SessionWithContext, id string
 	return nil
 }
 
+func FetchSpecificQuizWithAnswers(ctx context.Context, session neo4j.SessionWithContext, id string) (domain.QuizWithQuestionsAndAnswers, error) {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return domain.QuizWithQuestionsAndAnswers{}, errors.New("not found")
+	}
+
+	result, err := neo4j.ExecuteRead[*domain.QuizWithQuestionsAndAnswers](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*domain.QuizWithQuestionsAndAnswers, error) {
+			cypherScript := fmt.Sprintf("MATCH (quiz:Quiz {id: '%s'})"+
+				"-[:Has]->(question: Question) RETURN quiz, question", id)
+			neoRecords, err := transaction.Run(ctx,
+				cypherScript,
+				map[string]any{})
+
+			if err != nil {
+				return nil, err
+			}
+
+			records, err := neoRecords.Collect(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(records) == 0 {
+				return nil, errors.New("quiz has no questions")
+			}
+
+			quiz, err := toQuizForFetch(records[0])
+			if err != nil {
+				return nil, err
+			}
+
+			var resultRecords []domain.Question
+
+			for _, record := range records {
+
+				question, err := toQuestion(record)
+				if err != nil {
+					return nil, err
+				}
+
+				resultRecords = append(resultRecords, *question)
+			}
+
+			return &domain.QuizWithQuestionsAndAnswers{
+				QuizForFetch: *quiz,
+				Questions:    resultRecords,
+			}, nil
+		})
+	if err != nil {
+		return domain.QuizWithQuestionsAndAnswers{}, err
+	}
+	return *result, nil
+}
+
 func FetchSpecificQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) (domain.QuizWithQuestions, error) {
 	res := checkIfQuizExists(ctx, session, id)
 	if !res {
@@ -155,7 +210,7 @@ func FetchSpecificQuiz(ctx context.Context, session neo4j.SessionWithContext, id
 				return nil, errors.New("quiz has no questions")
 			}
 
-			quiz, err := toQuiz(records[0])
+			quiz, err := toQuizForFetch(records[0])
 			if err != nil {
 				return nil, err
 			}
@@ -173,8 +228,8 @@ func FetchSpecificQuiz(ctx context.Context, session neo4j.SessionWithContext, id
 			}
 
 			return &domain.QuizWithQuestions{
-				Quiz:      *quiz,
-				Questions: resultRecords,
+				QuizForFetch: *quiz,
+				Questions:    resultRecords,
 			}, nil
 		})
 	if err != nil {

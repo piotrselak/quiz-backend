@@ -10,6 +10,7 @@ import (
 	"github.com/piotrselak/back/repository"
 )
 
+// ADD UPSERT HERE NOT POST
 func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
@@ -25,6 +26,7 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 
 	validHash, err := repository.FetchQuizHash(ctx, session, id)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
 		return
 	}
@@ -85,6 +87,38 @@ func FetchSpecificQuiz(w http.ResponseWriter, r *http.Request) {
 	id := ctx.Value("quizID").(string)
 
 	q, err := repository.FetchSpecificQuiz(ctx, session, id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, fmt.Sprint(err), 404)
+		return
+	}
+	marshalled, err := json.Marshal(q)
+	if err != nil {
+		panic(err)
+	}
+	w.Write(marshalled)
+}
+
+func FetchSpecificQuizWithAnswers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
+	hash := r.Header.Get("editHash")
+
+	validHash, err := repository.FetchQuizHash(ctx, session, id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, fmt.Sprint(err), 404)
+		return
+	}
+
+	if hash != validHash {
+		http.Error(w, http.StatusText(401), http.StatusUnauthorized)
+		return
+	}
+
+	q, err := repository.FetchSpecificQuizWithAnswers(ctx, session, id)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, fmt.Sprint(err), 404)
