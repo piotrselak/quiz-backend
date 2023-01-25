@@ -41,7 +41,6 @@ func toQuizForFetch(record *neo4j.Record) (*domain.QuizForFetch, error) {
 	return &domain.QuizForFetch{Id: id, Name: name, Rating: rating, Modifiers: modifiers}, nil
 }
 
-// ToQuiz - converts neo4j record to quiz
 func toQuiz(record *neo4j.Record) (*domain.Quiz, error) {
 	rawItemNode, found := record.Get("quiz")
 	if !found {
@@ -171,5 +170,39 @@ func toQuestion(record *neo4j.Record) (*domain.Question, error) {
 		Answers:      answersFinal,
 		ValidAnswers: validAnswersFinal,
 		Type:         qType,
+	}, nil
+}
+
+func toUser(record *neo4j.Record) (*domain.User, error) {
+	rawItemNode, found := record.Get("p")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	itemNode := rawItemNode.(neo4j.Node)
+
+	name, err := neo4j.GetProperty[string](itemNode, "name")
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.User{
+		Name: name,
+	}, nil
+}
+
+func toPlayed(record *neo4j.Record) (*domain.Played, error) {
+	rawItemNode, found := record.Get("r")
+	if !found {
+		return nil, fmt.Errorf("could not find column")
+	}
+	itemNode := rawItemNode.(neo4j.Relationship)
+
+	score, err := neo4j.GetProperty[int64](itemNode, "score")
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.Played{
+		Score: score,
 	}, nil
 }

@@ -68,7 +68,9 @@ func specificQuizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r.Put("/", quizId.AddQuestions)
 	r.Delete("/", quizId.RemoveQuiz)
 	r.Get("/", quizId.FetchSpecificQuiz)
+	r.Post("/", quizId.VerifyAnswers)
 	r.Get("/answers", quizId.FetchSpecificQuizWithAnswers)
+	r.Get("/score", quizId.FetchRecordsForQuiz)
 	return r
 }
 

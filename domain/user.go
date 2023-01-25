@@ -10,7 +10,7 @@ type User struct {
 }
 
 type Played struct {
-	Score int `json:"score"`
+	Score int64 `json:"score"`
 }
 
 func (user User) ToCypher(char string) Cypher {
@@ -29,4 +29,9 @@ func (r Played) ToCypherLeft(char string) Cypher {
 	q, _ := json.Marshal(r)
 	properties := string(q)
 	return fmt.Sprintf("<-[%s:Played %s]-", char, properties)
+}
+
+type RecordUnit struct {
+	User   `json:"user"`
+	Played `json:"played"`
 }

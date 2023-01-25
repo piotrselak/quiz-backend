@@ -77,26 +77,16 @@ func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 	_, err := neo4j.ExecuteWrite[*domain.QuestionForPost](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (*domain.QuestionForPost, error) {
 
-			var cypherQuestions = ""
-
-			for index, question := range questions.Data {
-				newQuestion := fmt.Sprintf("(q)%s%s",
-					domain.Has{}.ToCypherRight(""), question.ToCypher(""))
-				var split string
-				if index == len(questions.Data)-1 {
-					split = ""
-				} else {
-					split = ", "
+			for _, question := range questions.Data {
+				properties := question.PropertiesToCypher()
+				_, err := transaction.Run(ctx,
+					fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) MERGE (q)-[r:Has]->(p:Question {ind: %d})"+
+						"ON MATCH SET p = %s ON CREATE SET p += %s", id, question.Index, properties, properties),
+					map[string]any{})
+				if err != nil {
+					fmt.Println(err)
+					return nil, err
 				}
-				cypherQuestions = cypherQuestions + newQuestion + split
-			}
-
-			_, err := transaction.Run(ctx,
-				fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) CREATE %s", id, cypherQuestions),
-				map[string]any{})
-
-			if err != nil {
-				return nil, err
 			}
 
 			return &questions, nil
@@ -181,6 +171,31 @@ func FetchSpecificQuizWithAnswers(ctx context.Context, session neo4j.SessionWith
 		return domain.QuizWithQuestionsAndAnswers{}, err
 	}
 	return *result, nil
+}
+
+func SaveRecord(ctx context.Context, session neo4j.SessionWithContext, id string, record domain.RecordUnit) error {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return errors.New("not found")
+	}
+	_, err := neo4j.ExecuteWrite[*domain.RecordUnit](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*domain.RecordUnit, error) {
+			cypherScript := fmt.Sprintf("MATCH (quiz:Quiz {id: '%s'})"+
+				"CREATE (p:Player {name: '%s'})-[r:Played {score: %d}]->(quiz)", id, record.Name, record.Score)
+			_, err := transaction.Run(ctx,
+				cypherScript,
+				map[string]any{})
+
+			if err != nil {
+				return nil, err
+			}
+
+			return &record, nil
+		})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func FetchSpecificQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) (domain.QuizWithQuestions, error) {
@@ -272,12 +287,56 @@ func FetchQuizHash(ctx context.Context, session neo4j.SessionWithContext, id str
 	return result, nil
 }
 
-func UpdateQuiz() {
+func FetchRecordsForQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) (*[]domain.RecordUnit, error) {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return nil, errors.New("not found")
+	}
 
-}
+	result, err := neo4j.ExecuteRead[*[]domain.RecordUnit](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (*[]domain.RecordUnit, error) {
+			cypherScript := fmt.Sprintf("MATCH (p:Player)-[r:Played]->(quiz:Quiz {id: '%s'}) RETURN p, r", id)
+			neoRecords, err := transaction.Run(ctx,
+				cypherScript,
+				map[string]any{})
 
-func FetchRecordsForQuiz() {
+			if err != nil {
+				return nil, err
+			}
 
+			records, err := neoRecords.Collect(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(records) == 0 {
+				return &[]domain.RecordUnit{}, nil
+			}
+
+			var resultRecords []domain.RecordUnit
+
+			for _, record := range records {
+				user, err := toUser(record)
+				if err != nil {
+					return nil, err
+				}
+				played, err := toPlayed(record)
+				if err != nil {
+					return nil, err
+				}
+				recordUnit := domain.RecordUnit{
+					User:   *user,
+					Played: *played,
+				}
+				resultRecords = append(resultRecords, recordUnit)
+			}
+
+			return &resultRecords, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {

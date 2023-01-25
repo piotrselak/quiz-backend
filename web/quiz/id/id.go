@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/piotrselak/back/domain"
+	"github.com/piotrselak/back/verification"
 	"net/http"
 
 	"github.com/piotrselak/back/db"
 	"github.com/piotrselak/back/repository"
 )
 
-// ADD UPSERT HERE NOT POST
 func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
@@ -27,7 +27,7 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	validHash, err := repository.FetchQuizHash(ctx, session, id)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(404), http.StatusNotFound)
 		return
 	}
 	if q.EditHash != validHash {
@@ -131,19 +131,69 @@ func FetchSpecificQuizWithAnswers(w http.ResponseWriter, r *http.Request) {
 	w.Write(marshalled)
 }
 
-func ModifyQuiz() {
+// saves record as well
+// 1 good answer = 10 points
+func VerifyAnswers(w http.ResponseWriter, r *http.Request) {
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
 
+	var answers domain.UserAnswers
+	err := json.NewDecoder(r.Body).Decode(&answers)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	quizWithAnswers, err := repository.FetchSpecificQuizWithAnswers(ctx, session, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	questions := quizWithAnswers.Questions
+
+	validCounter := verification.ParseAnswers(answers.Answers, questions)
+	fmt.Println(validCounter)
+
+	score := int64(validCounter * 10)
+
+	playerRecord := domain.RecordUnit{
+		User:   domain.User{Name: answers.Name},
+		Played: domain.Played{Score: score},
+	}
+
+	err = repository.SaveRecord(ctx, session, id, playerRecord)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	jsonRecord, err := json.Marshal(playerRecord)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Write(jsonRecord)
+}
+
+func FetchRecordsForQuiz(w http.ResponseWriter, r *http.Request) {
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
+
+	records, err := repository.FetchRecordsForQuiz(ctx, session, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	recordsParsed := *records
+
+	jsonRecords, err := json.Marshal(recordsParsed)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Write(jsonRecords)
 }
 
 func LikeQuiz() {}
-
-// saves record as well
-func VerifyAnswers() {
-
-}
-
-func FetchScoreStatisticsForQuiz() {
-
-}
-
-//maybe some apoc
