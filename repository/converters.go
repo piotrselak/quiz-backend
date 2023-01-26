@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/piotrselak/back/domain"
@@ -139,24 +140,26 @@ func toQuestion(record *neo4j.Record) (*domain.Question, error) {
 		return nil, err
 	}
 
-	answers, err := neo4j.GetProperty[[]any](itemNode, "answers")
+	answers, err := neo4j.GetProperty[string](itemNode, "answers")
 	if err != nil {
 		return nil, err
 	}
 
 	var answersFinal map[int]string
-	for i, ans := range answers {
-		answersFinal[i] = ans.(string)
+	err = json.Unmarshal([]byte(answers), &answersFinal)
+	if err != nil {
+		return nil, err
 	}
 
-	validAnswers, err := neo4j.GetProperty[[]any](itemNode, "validAnswers")
+	validAnswers, err := neo4j.GetProperty[string](itemNode, "validAnswers")
 	if err != nil {
 		return nil, err
 	}
 
 	var validAnswersFinal map[int]string
-	for i, ans := range validAnswers {
-		validAnswersFinal[i] = ans.(string)
+	err = json.Unmarshal([]byte(validAnswers), &validAnswersFinal)
+	if err != nil {
+		return nil, err
 	}
 
 	qType, err := neo4j.GetProperty[string](itemNode, "type")

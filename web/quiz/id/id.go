@@ -48,14 +48,7 @@ func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
 	id := ctx.Value("quizID").(string)
-
-	var hash domain.Hash
-	err := json.NewDecoder(r.Body).Decode(&hash)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	hash := r.Header.Get("editHash")
 
 	validHash, err := repository.FetchQuizHash(ctx, session, id)
 
@@ -63,7 +56,7 @@ func RemoveQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
 		return
 	}
-	if hash.EditHash != validHash {
+	if hash != validHash {
 		http.Error(w, http.StatusText(401), http.StatusUnauthorized)
 		return
 	}
