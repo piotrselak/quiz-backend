@@ -80,7 +80,7 @@ func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 			for _, question := range questions.Data {
 				properties := question.PropertiesToCypher()
 				_, err := transaction.Run(ctx,
-					fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) MERGE (q)-[r:Has]->(p:Question {ind: %d})"+
+					fmt.Sprintf("MATCH (q:Quiz {id: '%s'}) MERGE (q)-[r:Has]->(p:Question {index: %d})"+
 						"ON MATCH SET p = %s ON CREATE SET p += %s", id, question.Index, properties, properties),
 					map[string]any{})
 				if err != nil {

@@ -15,6 +15,7 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 	session := db.GetSessionFromContext(r)
 	ctx := r.Context()
 	id := ctx.Value("quizID").(string)
+	hash := r.Header.Get("editHash")
 
 	var q domain.QuestionForPost
 	err := json.NewDecoder(r.Body).Decode(&q)
@@ -30,13 +31,8 @@ func AddQuestions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(404), http.StatusNotFound)
 		return
 	}
-	if q.EditHash != validHash {
+	if hash != validHash {
 		http.Error(w, http.StatusText(401), http.StatusUnauthorized)
-		return
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	err = repository.AddQuestions(ctx, session, id, q)
@@ -156,6 +152,10 @@ func VerifyAnswers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(validCounter)
 
 	score := int64(validCounter * 10)
+	minusScore := int64(len(questions)) - score
+	if answers.NegativePoints {
+		score = score - minusScore
+	}
 
 	playerRecord := domain.RecordUnit{
 		User:   domain.User{Name: answers.Name},

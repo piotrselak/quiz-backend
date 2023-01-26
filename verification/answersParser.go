@@ -15,9 +15,9 @@ func ParseAnswers(userQuestions []domain.QuestionForFetch, validQuestions []doma
 	})
 	var counter int = 0
 	for i := 0; i < len(userQuestions); i++ {
-		if equal(userQuestions[i].Answers, validQuestions[i].Answers) { // here might be an error
-			counter += 1
-		}
+		//if equal(userQuestions[i].Answers, validQuestions[i].Answers) { // here might be an error
+		counter += 1
+		//}
 	}
 	return counter
 }

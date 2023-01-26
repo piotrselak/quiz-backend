@@ -104,9 +104,9 @@ func toQuestionForFetch(record *neo4j.Record) (*domain.QuestionForFetch, error) 
 		return nil, err
 	}
 
-	var answersFinal []string
-	for _, ans := range answers {
-		answersFinal = append(answersFinal, ans.(string))
+	var answersFinal map[int]string
+	for i, ans := range answers {
+		answersFinal[i] = ans.(string)
 	}
 
 	qType, err := neo4j.GetProperty[string](itemNode, "type")
@@ -144,9 +144,9 @@ func toQuestion(record *neo4j.Record) (*domain.Question, error) {
 		return nil, err
 	}
 
-	var answersFinal []string
-	for _, ans := range answers {
-		answersFinal = append(answersFinal, ans.(string))
+	var answersFinal map[int]string
+	for i, ans := range answers {
+		answersFinal[i] = ans.(string)
 	}
 
 	validAnswers, err := neo4j.GetProperty[[]any](itemNode, "validAnswers")
@@ -154,9 +154,9 @@ func toQuestion(record *neo4j.Record) (*domain.Question, error) {
 		return nil, err
 	}
 
-	var validAnswersFinal []string
-	for _, ans := range validAnswers {
-		answersFinal = append(validAnswersFinal, ans.(string))
+	var validAnswersFinal map[int]string
+	for i, ans := range validAnswers {
+		validAnswersFinal[i] = ans.(string)
 	}
 
 	qType, err := neo4j.GetProperty[string](itemNode, "type")
