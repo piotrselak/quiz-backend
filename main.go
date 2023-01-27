@@ -43,7 +43,7 @@ func main() {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("api"))
 	})
-
+	r.Mount("/count", countRouter(driver))
 	r.Mount("/quiz", quizRouter(driver))
 	r.Mount("/quiz/{id}", specificQuizRouter(driver))
 	err := http.ListenAndServe(":3333", r)
@@ -52,11 +52,19 @@ func main() {
 	}
 }
 
+func countRouter(driver neo4j.DriverWithContext) http.Handler {
+	r := chi.NewRouter()
+	r.Use(openSession(driver))
+	r.Get("/", web.FetchQuizesCount)
+	return r
+}
+
 func quizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
 	r.Use(openSession(driver))
 	r.Get("/", web.FetchAllQuizes)
 	r.Post("/", web.CreateNewQuiz)
+	r.Get("/count", web.FetchQuizesCount)
 	return r
 }
 

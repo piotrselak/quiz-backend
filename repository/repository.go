@@ -361,6 +361,34 @@ func LikeQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) 
 	return nil
 }
 
+func CountQuizes(ctx context.Context, session neo4j.SessionWithContext) (int64, error) {
+	result, err := neo4j.ExecuteRead[int64](ctx, session,
+		func(transaction neo4j.ManagedTransaction) (int64, error) {
+			neoRecords, err := transaction.Run(ctx,
+				"MATCH (n: Quiz) RETURN count(n) as count",
+				map[string]any{})
+
+			if err != nil {
+				return 0, err
+			}
+
+			record, err := neoRecords.Single(ctx)
+			if err != nil {
+				return 0, err
+			}
+
+			count, _, err := neo4j.GetRecordValue[int64](record, "count")
+			if err != nil {
+				return 0, err
+			}
+			return count, nil
+		})
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
+}
+
 func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {
 	result, err := neo4j.ExecuteRead[domain.Quiz](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (domain.Quiz, error) {
