@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/piotrselak/back/web"
 	"net/http"
 	"time"
 
@@ -10,8 +11,6 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	db "github.com/piotrselak/back/db"
-	"github.com/piotrselak/back/web/quiz"
-	quizId "github.com/piotrselak/back/web/quiz/id"
 )
 
 func main() {
@@ -56,8 +55,8 @@ func main() {
 func quizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
 	r.Use(openSession(driver))
-	r.Get("/", quiz.FetchAllQuizes)
-	r.Post("/", quiz.CreateNewQuiz)
+	r.Get("/", web.FetchAllQuizes)
+	r.Post("/", web.CreateNewQuiz)
 	return r
 }
 
@@ -65,12 +64,13 @@ func specificQuizRouter(driver neo4j.DriverWithContext) http.Handler {
 	r := chi.NewRouter()
 	r.Use(openSession(driver))
 	r.Use(QuizIDCtx)
-	r.Put("/", quizId.AddQuestions)
-	r.Delete("/", quizId.RemoveQuiz)
-	r.Get("/", quizId.FetchSpecificQuiz)
-	r.Post("/", quizId.VerifyAnswers)
-	r.Get("/answers", quizId.FetchSpecificQuizWithAnswers)
-	r.Get("/score", quizId.FetchRecordsForQuiz)
+	r.Put("/", web.AddQuestions)
+	r.Delete("/", web.RemoveQuiz)
+	r.Get("/", web.FetchSpecificQuiz)
+	r.Post("/", web.VerifyAnswers)
+	r.Get("/answers", web.FetchSpecificQuizWithAnswers)
+	r.Get("/score", web.FetchRecordsForQuiz)
+	r.Post("/like", web.LikeQuiz)
 	return r
 }
 

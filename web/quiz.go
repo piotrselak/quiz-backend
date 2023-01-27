@@ -1,4 +1,4 @@
-package quiz
+package web
 
 import (
 	"encoding/json"

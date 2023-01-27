@@ -100,15 +100,13 @@ func toQuestionForFetch(record *neo4j.Record) (*domain.QuestionForFetch, error) 
 		return nil, err
 	}
 
-	answers, err := neo4j.GetProperty[[]any](itemNode, "answers") //idk if any is all right
+	answers, err := neo4j.GetProperty[string](itemNode, "answers") //idk if any is all right
 	if err != nil {
 		return nil, err
 	}
 
 	var answersFinal map[int]string
-	for i, ans := range answers {
-		answersFinal[i] = ans.(string)
-	}
+	err = json.Unmarshal([]byte(answers), &answersFinal)
 
 	qType, err := neo4j.GetProperty[string](itemNode, "type")
 	if err != nil {

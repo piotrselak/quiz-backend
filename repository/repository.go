@@ -76,7 +76,13 @@ func AddQuestions(ctx context.Context, session neo4j.SessionWithContext,
 
 	_, err := neo4j.ExecuteWrite[*domain.QuestionForPost](ctx, session,
 		func(transaction neo4j.ManagedTransaction) (*domain.QuestionForPost, error) {
-
+			_, err := transaction.Run(ctx,
+				fmt.Sprintf("MATCH (q:Quiz {id: '%s'})-[r:Has]->(p:Question)"+
+					"DELETE r, p", id), map[string]any{})
+			if err != nil {
+				fmt.Println(err)
+				return nil, err
+			}
 			for _, question := range questions.Data {
 				properties := question.PropertiesToCypher()
 				_, err := transaction.Run(ctx,
@@ -337,6 +343,22 @@ func FetchRecordsForQuiz(ctx context.Context, session neo4j.SessionWithContext, 
 		return nil, err
 	}
 	return result, nil
+}
+
+func LikeQuiz(ctx context.Context, session neo4j.SessionWithContext, id string) error {
+	res := checkIfQuizExists(ctx, session, id)
+	if !res {
+		return errors.New("not found")
+	}
+
+	cypherScript := fmt.Sprintf("MATCH (q:Quiz{id: '%s'}) SET q.rating = q.rating + 1", id)
+
+	_, err := session.Run(ctx, cypherScript, map[string]any{})
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }
 
 func checkIfQuizExists(ctx context.Context, session neo4j.SessionWithContext, id string) bool {

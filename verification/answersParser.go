@@ -15,19 +15,19 @@ func ParseAnswers(userQuestions []domain.QuestionForFetch, validQuestions []doma
 	})
 	var counter int = 0
 	for i := 0; i < len(userQuestions); i++ {
-		//if equal(userQuestions[i].Answers, validQuestions[i].Answers) { // here might be an error
-		counter += 1
-		//}
+		if equal(userQuestions[i].Answers, validQuestions[i].ValidAnswers) { // here might be an error
+			counter += 1
+		}
 	}
 	return counter
 }
 
-func equal(a, b []string) bool {
+func equal(a, b map[int]string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for i, v := range a {
-		if v != b[i] {
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
 			return false
 		}
 	}

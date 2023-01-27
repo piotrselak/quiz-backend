@@ -1,4 +1,4 @@
-package id
+package web
 
 import (
 	"encoding/json"
@@ -81,6 +81,7 @@ func FetchSpecificQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprint(err), 404)
 		return
 	}
+
 	marshalled, err := json.Marshal(q)
 	if err != nil {
 		panic(err)
@@ -145,7 +146,7 @@ func VerifyAnswers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(validCounter)
 
 	score := int64(validCounter * 10)
-	minusScore := int64(len(questions)) - score
+	minusScore := (int64(len(questions)) - score) * 10
 	if answers.NegativePoints {
 		score = score - minusScore
 	}
@@ -189,4 +190,16 @@ func FetchRecordsForQuiz(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonRecords)
 }
 
-func LikeQuiz() {}
+func LikeQuiz(w http.ResponseWriter, r *http.Request) {
+	session := db.GetSessionFromContext(r)
+	ctx := r.Context()
+	id := ctx.Value("quizID").(string)
+
+	err := repository.LikeQuiz(ctx, session, id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, http.StatusText(404), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
